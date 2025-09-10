@@ -1,5 +1,5 @@
 packages<-c("quantmod", "dplyr", "ggplot2", "rugarch", "stats", "moments",
-            "gnorm")
+            "gnorm", "tseries")
 for (pkg in packages) {
   if (!require(pkg, character.only = TRUE)) {
     install.packages(pkg)
@@ -91,6 +91,12 @@ hist(z, breaks=40, probability=TRUE, main="Histogram of Std. Residuals", col="#6
 curve(dnorm(x), col="red", lwd=2, add=TRUE)
 par(set) #reset the plot layout  
 
+#check on the kurtosis
+forth_moment <- kurtosis(z)
+print(forth_moment)
+#test on normality 
+jb_test<- 
+
 #plot values 
 a<-par(mfrow=c(2,2))
 plot(eur_usd_df$Date, eur_usd_df$return, main="EUR/USD Daily Returns",
@@ -103,9 +109,6 @@ curve(dnorm(x, 0, 1), add=TRUE, col="red", lty=2)
 plot(density(eur_usd_df$return), main="Scatter Plot of Returns",
      xlab="Returns", col="purple", pch=19, cex=0.5)
 par(a)
-#check on the kurtosis
-forth_moment <- kurtosis(z)
-print(forth_moment)
 
 #we use for proposal likelihood the generalised gaussian model
 logdens_gnorm <- function(x) gnorm::dgnorm(x, mu = 0, alpha = 1, 
