@@ -141,7 +141,7 @@ y_star <- eur_usd_df$return / eta_hat
 
 # refit GARCH(1,4) with GED likelihood
 spec_ged <- ugarchspec(
-  variance.model     = list(model = "sGARCH", garchOrder = c(1,4)),
+  variance.model     = list(model = "sGARCH", garchOrder = c(3,4)),
   mean.model         = list(armaOrder = c(0,0)),
   distribution.model = "ged"
 )
@@ -283,7 +283,7 @@ theta_tilde<-coef(fit)
 y_star <- eur_usd_df$return / 0.55
 #compute GARCH (1,4) model
 spec_hat<-ugarchspec(
-  variance.model=list(model="sGARCH", garchOrder=c(1, 4)),
+  variance.model=list(model="sGARCH", garchOrder=c(3, 4)),
   distribution.model = "std"
 )
 fit_hat<-ugarchfit(
@@ -296,4 +296,43 @@ coef_hat<- coef(fit_hat)
 #weighted coefficients
 theta_w <- w_star * theta_tilde[names(coef_hat)] +
   (1 - w_star) * coef_hat[names(coef_hat)]
+#get values as numeric values
+alpha<-as.numeric(theta_w[5:7])
+beta<-as.numeric(theta_w[8:11])
+omega<-as.numeric(theta_w[4])
+#compute the model's omega and residuals
+n <- length(eur_usd_df$return)
+max_lag <- max(length(alpha), length(beta))
 
+sigma <- numeric(n)
+y_t <- numeric(n)
+eps <- rnorm(n)
+
+sigma_uncond <- sqrt(omega / (1 - sum(alpha) - sum(beta)))
+sigma[1:max_lag] <- sigma_uncond
+y_t[1:max_lag] <- sigma[1:max_lag] * eps[1:max_lag]
+
+for (t in (max_lag + 1):n) {
+  sigma[t] <- sqrt(
+    omega + sum(alpha * y_t[(t-1):(t-length(alpha))]^2) +
+      sum(beta  * sigma[(t-1):(t-length(beta))]^2)
+  )
+  y_t[t] <- sigma[t] * eps[t]
+}
+
+# Weighted standardized residuals
+residuals_weighted <- eur_usd_df$return - y_t
+z_w <- residuals_weighted / sigma
+
+par(mfrow=c(2,2))
+
+qqnorm(z_w, main="QQ-plot: Weighted GARCH Residuals")
+qqline(z_w, col="red")
+
+plot(density(z_w), main="Density: Weighted GARCH Residuals", xlab="Residuals", lwd=2, col="darkgreen")
+curve(dnorm(x), add=TRUE, col="red", lty=2)
+
+acf(z_w, main="ACF: Weighted Residuals", lag.max=20)
+acf(z_w^2, main="ACF: Weighted Squared Residuals", lag.max=20)
+
+par(mfrow=c(1,1)) # reset plotting layout
