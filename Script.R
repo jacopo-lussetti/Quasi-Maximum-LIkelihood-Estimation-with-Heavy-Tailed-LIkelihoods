@@ -58,7 +58,7 @@ for(i in 1:length(p)){
     fit<-ugarchfit(
       spec=spec,
       data= eur_usd_df$r2,
-  
+      
       solver="hybrid",
     )
     bic<-infocriteria(fit)[2]
@@ -96,9 +96,9 @@ forth_moment <- kurtosis(z)
 print(forth_moment)
 #test on normality 
 jb_test<- 
-
-#plot values 
-a<-par(mfrow=c(2,2))
+  
+  #plot values 
+  a<-par(mfrow=c(2,2))
 plot(eur_usd_df$Date, eur_usd_df$return, main="EUR/USD Daily Returns",
      xlab="Date", ylab="Returns", type="l", col="blue")
 plot(eur_usd_df$Date, eur_usd_df$r2, main="EUR/USD Squared Daily Returns",
@@ -325,14 +325,37 @@ residuals_weighted <- eur_usd_df$return - y_t
 z_w <- residuals_weighted / sigma
 
 par(mfrow=c(2,2))
+set_w <- par(mfrow = c(2, 2))
+plot(eur_usd_df$return, type = "l", main = "return time series", ylab = "Returns",
+     col= "#60b0dc")
+line(y_t, col="red")
+acf(z_w^2, main = "ACF of squared residuals", lag.max=20)
+qqnorm(z_w, main = "QQ-plot of residuals vs Normal",cex= 0.5)
+qqline(z_w, col = "red")
+hist(z_w, breaks=40, probability=TRUE, main="Histogram of Std. Residuals", col="#60b0dc")
+curve(dnorm(x), col="red", lwd=2, add=TRUE)
+par(set_w) #reset the plot layout  
 
-qqnorm(z_w, main="QQ-plot: Weighted GARCH Residuals")
-qqline(z_w, col="red")
 
-plot(density(z_w), main="Density: Weighted GARCH Residuals", xlab="Residuals", lwd=2, col="darkgreen")
-curve(dnorm(x), add=TRUE, col="red", lty=2)
+#
+mean_w <- mean(z_w, na.rm = TRUE)
+sd_w   <- sd(z_w, na.rm = TRUE)
+skew_w <- skewness(z_w, na.rm = TRUE)
+kur_w  <- kurtosis(z_w, na.rm = TRUE)
+jb_w   <- jarque.bera.test(z_w)$p.value
+n <- length(y_t)
+k <- length(theta_w)
+loglik_w <- sum(dnorm(eur_usd_df$return, mean=0, sd=sigma, log=TRUE))
+BIC_w <- -2 * loglik_w + k * log(n)
 
-acf(z_w, main="ACF: Weighted Residuals", lag.max=20)
-acf(z_w^2, main="ACF: Weighted Squared Residuals", lag.max=20)
+results_table <- data.frame(
+  Estimator = "Weighted GMLSE",
+  Mean = round(mean_w, 3),
+  Std_Dev = round(sd_w, 2),
+  Skewness = round(skew_w, 2),
+  Kurtosis = round(kur_w, 2),
+  JB_pval = round(jb_w, 3),
+  BIC= BIC_w
+)
 
-par(mfrow=c(1,1)) # reset plotting layout
+print(results_table)
