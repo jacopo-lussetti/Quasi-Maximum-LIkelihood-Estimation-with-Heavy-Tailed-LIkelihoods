@@ -24,17 +24,26 @@ eur_usd_df <- data.frame(
 colnames(eur_usd_df) <- c("Date", "FX")
 #remove NA values
 eur_usd_df<-na.omit(eur_usd_df)
-
+print
 
 #compute the daily returns
 
 eur_usd_df$return <- log(eur_usd_df$FX / lag(eur_usd_df$FX, 1))
 #remove the first row with NA value
 eur_usd_df <- eur_usd_df[-1, ]
-
 #squared return
 eur_usd_df$r2<- eur_usd_df$return^2
 
+#data visualisation
+set_1<-par(mfrow=c(2,2))
+plot(eur_usd_df$return, type="l", main="time serie of returns", col="#60b0dc")
+hist(eur_usd_df$return, breaks=40, probability=TRUE,
+     main="Histogram of Daily Returns", col="#60b0dc")
+acf(eur_usd_df$return, main="ACF of Daily Returns", lag.max=20)
+acf(eur_usd_df$return^2, main="ACF of Squared Daily Returns", lag.max=20)
+par(set_1)
+
+  
 #check wethere tsuqred returns are skewed
 print(kurtosis(eur_usd_df$r2)) #kurtosis= 6.34>3, so we have fat tails
 
@@ -328,7 +337,6 @@ par(mfrow=c(2,2))
 set_w <- par(mfrow = c(2, 2))
 plot(eur_usd_df$return, type = "l", main = "return time series", ylab = "Returns",
      col= "#60b0dc")
-line(y_t, col="red")
 acf(z_w^2, main = "ACF of squared residuals", lag.max=20)
 qqnorm(z_w, main = "QQ-plot of residuals vs Normal",cex= 0.5)
 qqline(z_w, col = "red")
